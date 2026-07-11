@@ -20,14 +20,15 @@ The only thing your assistant will ask you for is a GMI API key (create one at [
 
 ### Then just say what you want
 
-You talk. Your assistant runs the studio. Some things people say:
+You talk. Your assistant runs the studio. Some things creators say:
 
-- *"Generate a cinematic 8-second clip of a security guard greeting visitors at a modern office building at dusk, and save it to my Desktop."*
-- *"Here's a photo of me — put me in an Argentina kit and animate me scoring a World Cup goal."* (This works — see the recipe below. It cost about $12 to make a three-scene film this way.)
-- *"Make 5 hero images for my landing page, 16:9, minimalist, and download them all."*
-- *"Turn this script into a 30-second voiceover."*
-- *"Which video models can animate a photo of a real person? What would 10 seconds cost?"*
-- *"That job I started before lunch — is it done? Grab the video."*
+- *"Make a 9:16 POV vlog of a Roman soldier filming himself the morning before battle — selfie angle, talking to camera, handheld shake."*
+- *"Bigfoot morning routine vlog, episode 2. Same Bigfoot as last time — use yesterday's keyframe so he looks identical."*
+- *"Glass fruit cutting ASMR — knife slicing a translucent glass strawberry on a wooden board, macro shot, crisp sound on."*
+- *"Here's my product photo — make a UGC-style ad where a woman holds it up and talks to camera about it, 15 seconds, vertical."*
+- *"Here's a photo of me — put me in an Argentina kit and animate me scoring a World Cup goal, Messi assist."* (This works — see the recipe below. A three-scene film cost about $12.)
+- *"Generate 10 b-roll clips for my faceless channel video about ancient Egypt, plus a voiceover of this script."*
+- *"Batch out this week's 5 shorts overnight and put them in my content folder — tell me what it'll cost first."*
 
 Your assistant will pick the model, check the price **before** spending, upload your files (iPhone HEIC photos are fine), wait on the render, and download the results. If something's misconfigured, it costs $0 — every job is validated before submission.
 
