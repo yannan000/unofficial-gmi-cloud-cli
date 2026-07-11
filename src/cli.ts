@@ -6,8 +6,9 @@
  * (create a key at console.gmicloud.ai → API Keys).
  */
 import { Command } from "commander";
-import { readFile } from "node:fs/promises";
-import { basename, extname } from "node:path";
+import { readFile, writeFile, mkdir, chmod } from "node:fs/promises";
+import { homedir } from "node:os";
+import { basename, extname, join } from "node:path";
 import {
   GmiClient,
   GmiError,
@@ -17,7 +18,29 @@ import {
 } from "./client.js";
 import { loadEnv } from "./config.js";
 import { downloadAssets } from "./download.js";
-import { renderModelsTable, renderModelDetail, startSpinner, Spinner } from "./ui.js";
+import { renderModelsTable, renderModelDetail, renderTable, startSpinner, Spinner } from "./ui.js";
+
+/** Resolve --image values: URLs pass through, local paths get uploaded. */
+async function resolveImages(c: GmiClient, values: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const v of values) {
+    if (/^https?:\/\//.test(v)) {
+      urls.push(v);
+      continue;
+    }
+    const bytes = await readFile(v);
+    const spin = startSpinner(`uploading ${basename(v)}`);
+    try {
+      const { public_url } = await c.uploadFile(basename(v), bytes);
+      spin.stop(`Uploaded ${basename(v)}`);
+      urls.push(public_url);
+    } catch (e) {
+      spin.stop();
+      throw e;
+    }
+  }
+  return urls;
+}
 
 loadEnv();
 
@@ -138,6 +161,11 @@ program
   .requiredOption("-m, --model <id>", "Studio model ID, e.g. seedream-5.0-lite")
   .option("-p, --prompt <text>", "Prompt (shortcut for --payload '{\"prompt\": ...}')")
   .option("--payload <json>", "Full JSON payload of model parameters")
+  .option(
+    "-i, --image <path-or-url...>",
+    "Input image(s): local files are auto-uploaded, URLs pass through",
+  )
+  .option("--image-key <key>", "Payload key for --image (see `gmi model <id>`)", "image")
   .option("-o, --output <dir>", "Download generated assets into this directory")
   .option("--no-wait", "Return the request_id immediately instead of waiting")
   .option("--timeout <seconds>", "Max seconds to wait for completion", "600")
@@ -146,10 +174,15 @@ program
       let payload: Record<string, unknown> = {};
       if (opts.payload) payload = JSON.parse(opts.payload);
       if (opts.prompt) payload.prompt = opts.prompt;
-      if (Object.keys(payload).length === 0) {
-        fail(new GmiError("Provide -p/--prompt or --payload. See `gmi model <id>` for parameters."));
-      }
       const c = client();
+      if (opts.image?.length) {
+        const urls = await resolveImages(c, opts.image);
+        const plural = opts.imageKey.endsWith("s") || urls.length > 1;
+        payload[opts.imageKey] = plural ? urls : urls[0];
+      }
+      if (Object.keys(payload).length === 0) {
+        fail(new GmiError("Provide -p/--prompt, --payload, or --image. See `gmi model <id>` for parameters."));
+      }
       const created = await c.createGeneration(opts.model, payload);
       console.error(`Request ${created.request_id} submitted (status: ${created.status})`);
       if (!opts.wait) return printJson(created);
@@ -195,15 +228,60 @@ program
   });
 
 program
+  .command("requests [model]")
+  .description("List your recent generation jobs, optionally filtered by model")
+  .option("--json", "Print raw JSON")
+  .action(async (model: string | undefined, opts) => {
+    try {
+      const resp = await client().listGenerations(model);
+      if (opts.json) return printJson(resp);
+      const rows = (resp.requests ?? []).map((r) => {
+        const ts = r.created_at ? new Date(r.created_at > 1e12 ? r.created_at : r.created_at * 1000) : undefined;
+        return [
+          r.request_id,
+          r.model,
+          r.status,
+          ts && !Number.isNaN(ts.getTime()) ? ts.toLocaleString() : "",
+        ];
+      });
+      if (rows.length === 0) return console.log("No requests found.");
+      console.log(renderTable(["REQUEST ID", "MODEL", "STATUS", "CREATED"], rows));
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+const config = program.command("config").description("Manage CLI configuration");
+config
+  .command("set-key <api-key>")
+  .description("Store the API key in ~/.config/gmi/.env (chmod 600)")
+  .action(async (apiKey: string) => {
+    try {
+      const dir = join(homedir(), ".config", "gmi");
+      const path = join(dir, ".env");
+      await mkdir(dir, { recursive: true });
+      let existing = "";
+      try {
+        existing = await readFile(path, "utf8");
+      } catch {}
+      const others = existing
+        .split("\n")
+        .filter((l) => l.trim() && !l.match(/^\s*(export\s+)?GMI_API_KEY\s*=/));
+      await writeFile(path, [`GMI_API_KEY=${apiKey}`, ...others, ""].join("\n"));
+      await chmod(path, 0o600);
+      console.log(`Saved to ${path}`);
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+program
   .command("upload <file>")
   .description("Upload a local file, print the public URL to use in payloads")
   .action(async (file: string) => {
     try {
       const bytes = await readFile(file);
-      const ext = extname(file).toLowerCase();
-      const contentType =
-        { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav" }[ext] ?? "application/octet-stream";
-      const { public_url } = await client().uploadFile(basename(file), bytes, contentType);
+      const { public_url } = await client().uploadFile(basename(file), bytes);
       console.log(public_url);
     } catch (e) {
       fail(e);
@@ -216,6 +294,7 @@ program
   .requiredOption("-m, --model <id>", "LLM model ID (see `gmi models --llm`)")
   .option("-s, --system <text>", "System prompt")
   .option("-t, --temperature <n>", "Sampling temperature")
+  .option("--no-stream", "Wait for the full response instead of streaming")
   .action(async (prompt: string, opts) => {
     try {
       const messages = [
@@ -224,8 +303,13 @@ program
       ];
       const params: Record<string, unknown> = {};
       if (opts.temperature !== undefined) params.temperature = Number(opts.temperature);
-      const { text } = await client().chat(opts.model, messages, params);
-      console.log(text);
+      if (opts.stream) {
+        await client().chatStream(opts.model, messages, params, (d) => process.stdout.write(d));
+        process.stdout.write("\n");
+      } else {
+        const { text } = await client().chat(opts.model, messages, params);
+        console.log(text);
+      }
     } catch (e) {
       fail(e);
     }

@@ -110,14 +110,11 @@ server.tool(
 server.tool(
   "upload_file",
   "Upload a local file (e.g. a reference image for image-to-video) to GMI Cloud and get back a public URL usable in generate_media payloads.",
-  { file_path: z.string().describe("Absolute path to the local file") },
+  { file_path: z.string().describe("Absolute path to the local file (jpg, jpeg, png, mp4, mp3, or wav)") },
   async ({ file_path }) => {
     try {
       const bytes = await readFile(file_path);
-      const ext = extname(file_path).toLowerCase();
-      const contentType =
-        { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav" }[ext] ?? "application/octet-stream";
-      return ok(await client().uploadFile(basename(file_path), bytes, contentType));
+      return ok(await client().uploadFile(basename(file_path), bytes));
     } catch (e) {
       return err(e);
     }

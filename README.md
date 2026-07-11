@@ -41,17 +41,27 @@ gmi generate -m seedream-5.0-lite -p "Oakland skyline at dusk, cinematic" -o ./o
 # generate a video with full payload control
 gmi generate -m Veo3 --payload '{"prompt":"eagle over mountains","durationSeconds":"8","aspectRatio":"16:9"}' -o ./out
 
+# image-to-video: local files are auto-uploaded (--image-key picks the payload field)
+gmi generate -m kling-v3-image-to-video --image ./photo.jpg -p "gentle camera push-in" -o ./out
+gmi generate -m seedance-2-0-260128 --image ./face1.jpg ./face2.jpg --image-key reference_images -p "..." -o ./out
+
 # fire-and-forget, then poll / fetch later (Ctrl+C during a wait prints the resume command)
 gmi generate -m Veo3 -p "..." --no-wait
 gmi status <request-id> --wait -o ./out
 gmi download <request-id> -o ./out
+gmi requests                      # your recent jobs (optionally: gmi requests <model-id>)
 
-# upload a reference image (for image-to-video models), get a public URL
+# upload a file yourself, get a public URL (jpg, jpeg, png, mp4, mp3, wav)
 gmi upload ./photo.jpg
 
-# chat with an LLM
+# chat with an LLM (streams by default; --no-stream for scripting)
 gmi chat -m deepseek-ai/DeepSeek-V3 "Summarize BSIS armed guard requirements"
+
+# store your key without touching .env files by hand
+gmi config set-key YOUR_KEY       # writes ~/.config/gmi/.env, chmod 600
 ```
+
+Requests retry automatically on 429 rate limits (and on 5xx/network errors for reads; job submissions are never blindly re-sent).
 
 Run `npm link` once to get the `gmi` command on your PATH (or use `node dist/cli.js ...`).
 

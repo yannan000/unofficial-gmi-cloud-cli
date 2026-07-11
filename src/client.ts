@@ -42,6 +42,14 @@ export type RequestStatus =
 
 export const TERMINAL_STATUSES: RequestStatus[] = ["success", "failed", "cancelled"];
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function backoffMs(attempt: number): number {
+  return 1000 * 2 ** attempt;
+}
+
 export class GmiError extends Error {
   constructor(
     message: string,
@@ -77,16 +85,40 @@ export class GmiClient {
     return h;
   }
 
+  /**
+   * Fetch with retry. 429 retries for any method (the request was rejected,
+   * not processed). 5xx and network errors retry only for GET — retrying a
+   * failed POST /requests could double-submit a paid job.
+   */
   private async request<T>(url: string, init: RequestInit = {}): Promise<T> {
-    const res = await fetch(url, { ...init, headers: { ...this.headers(), ...init.headers } });
-    const text = await res.text();
-    if (!res.ok) {
+    const method = (init.method ?? "GET").toUpperCase();
+    const maxRetries = 3;
+    for (let attempt = 0; ; attempt++) {
+      let res: Response;
+      try {
+        res = await fetch(url, { ...init, headers: { ...this.headers(), ...init.headers } });
+      } catch (e) {
+        if (method === "GET" && attempt < maxRetries) {
+          await sleep(backoffMs(attempt));
+          continue;
+        }
+        throw new GmiError(`Network error for ${url}: ${String(e)}`);
+      }
+      const text = await res.text();
+      if (res.ok) {
+        try {
+          return JSON.parse(text) as T;
+        } catch {
+          throw new GmiError(`Non-JSON response from ${url}`, res.status, text.slice(0, 500));
+        }
+      }
+      const retryable = res.status === 429 || (method === "GET" && res.status >= 500);
+      if (retryable && attempt < maxRetries) {
+        const retryAfter = Number(res.headers.get("retry-after"));
+        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : backoffMs(attempt));
+        continue;
+      }
       throw new GmiError(`GMI API ${res.status} ${res.statusText} for ${url}`, res.status, text);
-    }
-    try {
-      return JSON.parse(text) as T;
-    } catch {
-      throw new GmiError(`Non-JSON response from ${url}`, res.status, text.slice(0, 500));
     }
   }
 
@@ -115,6 +147,12 @@ export class GmiClient {
     return this.request(`${STUDIO_BASE}/requests/${encodeURIComponent(requestId)}`);
   }
 
+  /** List your recent generation jobs, optionally filtered by model. */
+  async listGenerations(model?: string): Promise<{ requests: GenerationRequest[] }> {
+    const qs = model ? `?model=${encodeURIComponent(model)}` : "";
+    return this.request(`${STUDIO_BASE}/requests${qs}`);
+  }
+
   /** Poll a job until it reaches a terminal status (success/failed/cancelled). */
   async waitForGeneration(
     requestId: string,
@@ -136,16 +174,31 @@ export class GmiClient {
 
   /**
    * Upload a local file (e.g. a reference image for image-to-video) and get a
-   * public URL usable in generation payloads.
+   * public URL usable in generation payloads. The API accepts only these file
+   * types (bare extension): jpeg, jpg, png, mp4, mp3, wav. The presigned PUT
+   * is signed for a literal "<category>/<ext>" content type and expires in
+   * ~15 minutes.
    */
-  async uploadFile(filename: string, bytes: Uint8Array, contentType = "application/octet-stream"): Promise<{ public_url: string }> {
+  async uploadFile(filename: string, bytes: Uint8Array): Promise<{ public_url: string }> {
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+    const signedType: Record<string, string> = {
+      jpeg: "image/jpeg",
+      jpg: "image/jpg",
+      png: "image/png",
+      mp4: "video/mp4",
+      mp3: "audio/mp3",
+      wav: "audio/wav",
+    };
+    if (!signedType[ext]) {
+      throw new GmiError(`Unsupported file type ".${ext}" — GMI accepts: ${Object.keys(signedType).join(", ")}`);
+    }
     const grant = await this.request<{ upload_url: string; public_url: string }>(
       `${STUDIO_BASE}/upload-url`,
-      { method: "POST", body: JSON.stringify({ filename }) },
+      { method: "POST", body: JSON.stringify({ file_type: ext }) },
     );
     const put = await fetch(grant.upload_url, {
       method: "PUT",
-      headers: { "Content-Type": contentType },
+      headers: { "Content-Type": signedType[ext] },
       body: bytes as unknown as BodyInit,
     });
     if (!put.ok) {
@@ -175,6 +228,46 @@ export class GmiClient {
     });
     const text = raw.choices?.[0]?.message?.content ?? "";
     return { text, raw };
+  }
+
+  /** Streaming chat completion; calls onDelta per token, returns the full text. */
+  async chatStream(
+    model: string,
+    messages: Array<{ role: string; content: string }>,
+    params: Record<string, unknown>,
+    onDelta: (chunk: string) => void,
+  ): Promise<string> {
+    const res = await fetch(`${LLM_BASE}/chat/completions`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ model, messages, stream: true, ...params }),
+    });
+    if (!res.ok || !res.body) {
+      throw new GmiError(`GMI API ${res.status} ${res.statusText} for chat/completions`, res.status, await res.text());
+    }
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let full = "";
+    for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+      buffer += decoder.decode(chunk, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const data = line.replace(/^data:\s*/, "").trim();
+        if (!data || data === "[DONE]" || !line.startsWith("data:")) continue;
+        try {
+          const parsed = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+          const delta = parsed.choices?.[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            onDelta(delta);
+          }
+        } catch {
+          // partial/keepalive line — skip
+        }
+      }
+    }
+    return full;
   }
 }
 
