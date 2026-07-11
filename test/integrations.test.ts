@@ -11,7 +11,7 @@ test("every client has an id, name, and a snippet mentioning the server path", (
 });
 
 test("expected clients are covered", () => {
-  for (const id of ["claude-code", "claude-desktop", "cursor", "windsurf", "cline", "kilo", "codex", "grok", "generic"]) {
+  for (const id of ["claude-code", "claude-desktop", "cursor", "windsurf", "cline", "kilo", "codex", "grok", "factory", "generic"]) {
     assert.ok(findClient(id), `missing client: ${id}`);
   }
 });

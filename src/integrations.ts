@@ -103,6 +103,14 @@ export const CLIENTS: ClientSpec[] = [
     snippet: mcpServersJson,
   },
   {
+    id: "factory",
+    name: "Factory (droid)",
+    configPath: join(home, ".factory", "mcp.json"),
+    installable: true,
+    snippet: mcpServersJson,
+    notes: "Or run `/mcp` inside droid to manage servers interactively.",
+  },
+  {
     id: "generic",
     name: "Any MCP client (stdio)",
     installable: false,

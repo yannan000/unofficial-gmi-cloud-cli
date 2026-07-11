@@ -108,7 +108,7 @@ Run `npm link` once to get the `gmi` command on your PATH (or use `node dist/cli
 
 ## MCP server — works with every AI IDE
 
-The MCP server speaks standard stdio, so it works in **Claude Code, Claude Desktop, Cursor, Windsurf (Cognition), Cline, Kilo Code, OpenAI Codex, Grok CLI**, and any other MCP client. One command sets each of them up:
+The MCP server speaks standard stdio, so it works in **Claude Code, Claude Desktop, Cursor, Windsurf (Cognition), Cline, Kilo Code, OpenAI Codex, Grok CLI, Factory (droid)**, and any other MCP client. One command sets each of them up:
 
 ```bash
 gmi mcp-config                    # list every supported client + its config file
@@ -126,6 +126,7 @@ gmi mcp-config cursor --install   # write it into the client's config (backs up 
 | Kilo Code (VS Code) | `gmi mcp-config kilo --install` |
 | OpenAI Codex CLI | `gmi mcp-config codex` → TOML for `~/.codex/config.toml` |
 | Grok CLI | `gmi mcp-config grok --install` |
+| Factory (droid) | `gmi mcp-config factory --install` |
 | Anything else | `gmi mcp-config generic` — standard `mcpServers` JSON |
 
 No API key in your IDE configs: the server auto-loads `GMI_API_KEY` from `~/.config/gmi/.env`, so the config is just `command: node, args: [.../mcp-server.js]`. (You can still set an `env` block per client if you prefer.)
