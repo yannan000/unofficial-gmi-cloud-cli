@@ -64,6 +64,14 @@ No API key in your IDE configs: the server auto-loads `GMI_API_KEY` from `~/.con
 
 *(ChatGPT's normal chat can't run local tools — but Codex cloud can: it has a terminal, so it installs and drives the CLI like any other agent.)*
 
+## Who it's for
+
+| You are… | Your pain | What you get |
+|----------|-----------|--------------|
+| **A creator** shipping daily (shorts, ASMR, UGC ads, faceless channels) | Console throughput; format walls; surprise spend | Storyboard in stills, render in batches, download to `./clips` — one command per shot |
+| **A builder** adding gen-media to a product or pipeline | Weeks of API wrapper work; retry/idempotency landmines | The client you were about to write, already battle-tested — 37 tests pin the real API's behavior |
+| **An agent user** (Claude, Cursor, Codex, droid…) | Wants the AI to *do* the work end to end | One MCP server = your assistant sees all 300+ models and runs your whole render pipeline |
+
 ## There's no extra cost
 
 Work done through this tool costs exactly what the same generation costs in the GMI console. Bring your own API key; the tool adds nothing. It actually tends to cost *less* in practice, because every job is priced and validated **before** submission — the mistakes that would burn credits fail locally for free, and `--dry-run` previews any job without spending a cent.
@@ -174,6 +182,29 @@ On `success`, the job's `outcome` contains the generated asset URLs; the client 
 - Video API: https://docs.gmicloud.ai/inference-engine/api-reference/video-api-reference
 - LLM API: https://docs.gmicloud.ai/inference-engine/api-reference/llm-api-reference
 - Full doc index: https://docs.gmicloud.ai/llms.txt
+
+---
+
+## FAQ
+
+**Why not just use the GMI console?**
+Use both. The console is great for exploring one model. `gmi` is for the day you have 12 shots and a deadline — or an AI assistant you'd rather hand the work to.
+
+**Is this affiliated with GMI Cloud?**
+No — unofficial, MIT-licensed, bring your own key. It adds no markup and calls the same APIs your console session does.
+
+**Another wrapper that'll rot in six months?**
+37 tests pin every real API behavior, CI runs on every push across two OSes and two Node versions, and `gmi update` keeps installs current. It's maintained like infrastructure, not a gist.
+
+**Can it handle real people / my face?**
+Yes — with the right model. Kling accepts human likenesses; Seedance never will (its filter rejects any photorealistic person, even AI-rendered ones). The model matrix above saves you from finding that out with your own money.
+
+**What does it cost to try?**
+The tool is free. Generations bill to your GMI key at GMI's prices — a test image is ~$0.035, and every job shows its estimated cost before submitting. `--dry-run` costs nothing at all.
+
+## The story
+
+> One evening, one terminal: a three-scene World Cup short — a real person's likeness scoring in a packed final, a Messi-style #10 assisting — for about **$12** in model spend. Keyframes from Gemini, motion from Kling with start and end frames pinned, audio on, assembled with ffmpeg. The failed takes cost $0, because every job is priced and validated before it's submitted. Then Erling Haaland did the Jack Sparrow dock walk, just because the pipeline made it a ten-minute job. That pipeline is this repo.
 
 ---
 
