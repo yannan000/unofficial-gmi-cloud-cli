@@ -120,7 +120,7 @@ gmi models --json                 # raw JSON (for scripting)
 gmi model seedream-5.0-lite       # parameter schema + pricing, readable
 
 # generate an image and save it locally (spinner shows live status + elapsed time)
-gmi generate -m seedream-5.0-lite -p "Oakland skyline at dusk, cinematic" -o ./out
+gmi generate -m seedream-5.0-lite -p "San Francisco skyline at dusk, cinematic" -o ./out
 
 # image-to-video: local files are auto-uploaded (--image-key picks the payload field)
 gmi generate -m kling-v3-image-to-video --image ./photo.heic -p "gentle camera push-in" -o ./out
