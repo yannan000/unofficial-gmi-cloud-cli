@@ -3,7 +3,7 @@
  */
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
-import { basename, extname, join } from "node:path";
+import { basename, extname, join, sep } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { GmiError } from "./client.js";
@@ -42,9 +42,14 @@ export async function downloadAssets(urls: string[], dir: string, prefix: string
     let name = safeName(basename(new URL(url).pathname));
     if (!name || !extname(name)) {
       const ext = EXT_BY_TYPE[contentType] ?? "";
-      name = `${prefix}${urls.length > 1 ? `-${i + 1}` : ""}${ext}`;
+      // prefix is derived from an API-controlled request_id — sanitize it too.
+      name = safeName(`${prefix}${urls.length > 1 ? `-${i + 1}` : ""}${ext}`);
     }
     const path = join(dir, name);
+    // Defense in depth: never write outside the intended directory.
+    if (path !== dir && !path.startsWith(dir + sep)) {
+      throw new GmiError(`Refusing to write outside ${dir}: ${name}`);
+    }
     await pipeline(Readable.fromWeb(res.body as import("node:stream/web").ReadableStream), createWriteStream(path));
     saved.push(path);
   }
