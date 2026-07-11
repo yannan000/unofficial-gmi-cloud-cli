@@ -1,6 +1,6 @@
 {
   "name": "unofficial-gmi-cloud-cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Unofficial GMI Cloud CLI (+ MCP server) for GMI Studio \u2014 image/video/audio generation and LLM inference",
   "repository": {
     "type": "git",
@@ -32,7 +32,8 @@
   "main": "dist/client.js",
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build",
+    "test": "node --import tsx --test test/*.test.ts",
+    "prepublishOnly": "npm run build && npm test",
     "dev:mcp": "tsx src/mcp-server.ts",
     "dev:cli": "tsx src/cli.ts"
   },

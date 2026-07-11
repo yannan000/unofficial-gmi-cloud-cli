@@ -10,25 +10,38 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export function loadEnv(): void {
+/** Parse .env text into key/value pairs (supports `export`, quotes, comments). */
+export function parseEnv(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    if (/^\s*#/.test(line)) continue;
+    const m = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!m) continue;
+    const value = m[2].trim().replace(/^(["'])(.*)\1$/, "$2");
+    if (value) out[m[1]] = value;
+  }
+  return out;
+}
+
+export function envFileCandidates(): string[] {
   const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-  const candidates = [
+  return [
     join(process.cwd(), ".env"),
     join(pkgRoot, ".env"),
     join(homedir(), ".config", "gmi", ".env"),
   ];
-  for (const path of candidates) {
+}
+
+export function loadEnv(): void {
+  for (const path of envFileCandidates()) {
     let text: string;
     try {
       text = readFileSync(path, "utf8");
     } catch {
       continue;
     }
-    for (const line of text.split("\n")) {
-      const m = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-      if (!m) continue;
-      const value = m[2].trim().replace(/^(["'])(.*)\1$/, "$2");
-      if (!process.env[m[1]] && value) process.env[m[1]] = value;
+    for (const [key, value] of Object.entries(parseEnv(text))) {
+      if (!process.env[key]) process.env[key] = value;
     }
   }
 }

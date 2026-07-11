@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: CLI smoke test (no API key required)
+        run: |
+          node dist/cli.js --help > /dev/null
+          node dist/cli.js generate --help > /dev/null
+          # missing-key error must be graceful, not a stack trace
+          if node dist/cli.js models 2>err.txt; then echo "expected failure"; exit 1; fi
+          grep -q "Missing API key" err.txt

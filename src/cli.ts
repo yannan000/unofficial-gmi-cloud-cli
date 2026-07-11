@@ -6,6 +6,8 @@
  * (create a key at console.gmicloud.ai → API Keys).
  */
 import { Command } from "commander";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { readFile, writeFile, mkdir, chmod } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, extname, join } from "node:path";
@@ -16,7 +18,7 @@ import {
   extractMediaUrls,
   TERMINAL_STATUSES,
 } from "./client.js";
-import { loadEnv } from "./config.js";
+import { loadEnv, parseEnv, envFileCandidates } from "./config.js";
 import { downloadAssets } from "./download.js";
 import {
   renderModelsTable,
@@ -26,6 +28,7 @@ import {
   Spinner,
   validatePayload,
   estimateCost,
+  itemsOf,
 } from "./ui.js";
 import { prepareForUpload } from "./convert.js";
 
@@ -63,7 +66,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.5.0");
+  .version("0.6.0");
 
 function client(): GmiClient {
   try {
@@ -301,6 +304,58 @@ program
     } catch (e) {
       fail(e);
     }
+  });
+
+program
+  .command("doctor")
+  .description("Check API key, connectivity, and local converters")
+  .action(async () => {
+    const results: string[][] = [];
+    let healthy = true;
+    const keySource = process.env.GMI_API_KEY
+      ? envFileCandidates().find((p) => {
+          try {
+            return parseEnv(readFileSync(p, "utf8")).GMI_API_KEY === process.env.GMI_API_KEY;
+          } catch {
+            return false;
+          }
+        }) ?? "shell environment"
+      : undefined;
+    results.push(["API key", keySource ? `✓ found (${keySource})` : "✗ missing — run: gmi config set-key <key>"]);
+    if (!keySource) healthy = false;
+
+    if (keySource) {
+      try {
+        const models = itemsOf(await client().listStudioModels());
+        results.push(["Studio API", `✓ reachable (${models.length} models)`]);
+      } catch (e) {
+        results.push(["Studio API", `✗ ${e instanceof GmiError ? e.message : String(e)}`]);
+        healthy = false;
+      }
+      try {
+        const models = itemsOf(await client().listLlmModels());
+        results.push(["LLM API", `✓ reachable (${models.length} models)`]);
+      } catch (e) {
+        results.push(["LLM API", `✗ ${e instanceof GmiError ? e.message : String(e)}`]);
+        healthy = false;
+      }
+    }
+
+    const has = (cmd: string) => {
+      try {
+        execFileSync("which", [cmd], { stdio: "ignore" });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const sips = process.platform === "darwin" && has("sips");
+    const ffmpeg = has("ffmpeg");
+    results.push(["Image conversion", sips || ffmpeg ? `✓ ${sips ? "sips" : "ffmpeg"}` : "✗ install ffmpeg"]);
+    results.push(["Video/audio conversion", ffmpeg ? "✓ ffmpeg" : "– optional: brew install ffmpeg"]);
+
+    console.log(renderTable(["CHECK", "RESULT"], results, 100));
+    process.exit(healthy ? 0 : 1);
   });
 
 const config = program.command("config").description("Manage CLI configuration");
