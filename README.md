@@ -1,6 +1,8 @@
-# gmi-studio-mcp
+# Unofficial GMI Cloud CLI
 
-MCP server **and** CLI for [GMI Cloud](https://console.gmicloud.ai) — one shared client covering:
+> ⚠️ Unofficial community tool for **GMI Studio**. Not affiliated with or endorsed by GMI Cloud.
+
+CLI **and** MCP server for [GMI Cloud](https://console.gmicloud.ai) — one shared client covering:
 
 - **Studio / generative media** — image, video, and audio models (Seedream, Veo, Kling, Sora, Flux, MiniMax TTS, …) via the async request queue at `console.gmicloud.ai/api/v1/ie/requestqueue/apikey`
 - **Inference Engine LLMs** — OpenAI-compatible chat API at `api.gmi-serving.com/v1` (DeepSeek, Qwen, Llama, …)
