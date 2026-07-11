@@ -55,7 +55,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.2.0");
+  .version("0.4.0");
 
 function client(): GmiClient {
   try {
