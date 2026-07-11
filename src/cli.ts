@@ -13,6 +13,7 @@ import { homedir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CLIENTS, findClient, mergeMcpConfig, SERVER_NAME } from "./integrations.js";
+import { maybeNotifyUpdate, selfUpdate } from "./update.js";
 import {
   GmiClient,
   GmiError,
@@ -68,7 +69,15 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.7.0");
+  .version("0.8.0");
+
+// Once-a-day update notice on stderr — never for the MCP server (clean stdio)
+// and never for `update` itself.
+program.hook("preAction", async (_thisCommand, actionCommand) => {
+  if (!["mcp", "update"].includes(actionCommand.name())) {
+    await maybeNotifyUpdate(program.version() ?? "0.0.0");
+  }
+});
 
 function client(): GmiClient {
   try {
@@ -352,6 +361,22 @@ program
     console.log(`# ${spec.name}${spec.configPath ? ` — ${spec.configPath}` : ""}`);
     if (spec.notes) console.log(`# ${spec.notes}`);
     console.log(spec.snippet(serverPath));
+  });
+
+program
+  .command("update")
+  .description("Update the CLI in place (git checkout → pull+build; npm install → @latest)")
+  .action(async () => {
+    try {
+      const result = await selfUpdate((line) => console.error(line));
+      if (result.before === result.after) {
+        console.log(`Already up to date (v${result.after}).`);
+      } else {
+        console.log(`Updated v${result.before} → v${result.after} (${result.mode}).`);
+      }
+    } catch (e) {
+      fail(e);
+    }
   });
 
 program

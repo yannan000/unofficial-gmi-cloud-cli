@@ -141,7 +141,10 @@ gmi upload ./photo.heic
 gmi chat -m deepseek-ai/DeepSeek-V3 "Summarize BSIS armed guard requirements"
 
 gmi doctor                        # key, connectivity, converters — health check
+gmi update                        # update in place (git checkout → pull+build; npm → @latest)
 ```
+
+The CLI also checks for new versions at most once a day (silently, on the npm registry) and prints a one-line notice when an update exists — never during MCP serving, and a failed check never breaks a command.
 
 Requests retry automatically on 429 rate limits (and on 5xx/network errors for reads; job submissions are never blindly re-sent).
 
