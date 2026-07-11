@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 test-output/
+worldcup/me.jpg
+worldcup/clips/

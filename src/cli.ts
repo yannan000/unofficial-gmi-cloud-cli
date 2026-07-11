@@ -19,8 +19,12 @@ import {
 import { loadEnv } from "./config.js";
 import { downloadAssets } from "./download.js";
 import { renderModelsTable, renderModelDetail, renderTable, startSpinner, Spinner } from "./ui.js";
+import { prepareForUpload } from "./convert.js";
 
-/** Resolve --image values: URLs pass through, local paths get uploaded. */
+/**
+ * Resolve --image values: URLs pass through; local paths are converted to a
+ * GMI-accepted format if needed, then uploaded.
+ */
 async function resolveImages(c: GmiClient, values: string[]): Promise<string[]> {
   const urls: string[] = [];
   for (const v of values) {
@@ -28,11 +32,13 @@ async function resolveImages(c: GmiClient, values: string[]): Promise<string[]> 
       urls.push(v);
       continue;
     }
-    const bytes = await readFile(v);
-    const spin = startSpinner(`uploading ${basename(v)}`);
+    const prepared = await prepareForUpload(v);
+    if (prepared.converted) console.error(`Converted ${basename(v)} → ${basename(prepared.path)}`);
+    const bytes = await readFile(prepared.path);
+    const spin = startSpinner(`uploading ${basename(prepared.path)}`);
     try {
-      const { public_url } = await c.uploadFile(basename(v), bytes);
-      spin.stop(`Uploaded ${basename(v)}`);
+      const { public_url } = await c.uploadFile(basename(prepared.path), bytes);
+      spin.stop(`Uploaded ${basename(prepared.path)}`);
       urls.push(public_url);
     } catch (e) {
       spin.stop();
@@ -277,11 +283,13 @@ config
 
 program
   .command("upload <file>")
-  .description("Upload a local file, print the public URL to use in payloads")
+  .description("Upload a local file (any common format — auto-converted), print the public URL")
   .action(async (file: string) => {
     try {
-      const bytes = await readFile(file);
-      const { public_url } = await client().uploadFile(basename(file), bytes);
+      const prepared = await prepareForUpload(file);
+      if (prepared.converted) console.error(`Converted ${basename(file)} → ${basename(prepared.path)}`);
+      const bytes = await readFile(prepared.path);
+      const { public_url } = await client().uploadFile(basename(prepared.path), bytes);
       console.log(public_url);
     } catch (e) {
       fail(e);

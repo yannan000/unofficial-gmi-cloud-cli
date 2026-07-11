@@ -12,6 +12,7 @@ import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { GmiClient, GmiError, extractMediaUrls } from "./client.js";
 import { loadEnv } from "./config.js";
+import { prepareForUpload } from "./convert.js";
 
 loadEnv();
 
@@ -110,11 +111,13 @@ server.tool(
 server.tool(
   "upload_file",
   "Upload a local file (e.g. a reference image for image-to-video) to GMI Cloud and get back a public URL usable in generate_media payloads.",
-  { file_path: z.string().describe("Absolute path to the local file (jpg, jpeg, png, mp4, mp3, or wav)") },
+  { file_path: z.string().describe("Absolute path to the local file (any common image/video/audio format; auto-converted to a GMI-accepted type)") },
   async ({ file_path }) => {
     try {
-      const bytes = await readFile(file_path);
-      return ok(await client().uploadFile(basename(file_path), bytes));
+      const prepared = await prepareForUpload(file_path);
+      const bytes = await readFile(prepared.path);
+      const result = await client().uploadFile(basename(prepared.path), bytes);
+      return ok(prepared.converted ? { ...result, converted_to: basename(prepared.path) } : result);
     } catch (e) {
       return err(e);
     }
