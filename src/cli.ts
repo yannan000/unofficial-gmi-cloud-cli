@@ -432,11 +432,45 @@ program
   });
 
 const config = program.command("config").description("Manage CLI configuration");
+/** Read a secret from stdin without echoing (and without shell history). */
+function promptHidden(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (!process.stdin.isTTY) {
+      // piped input: `echo KEY | gmi config set-key`
+      let data = "";
+      process.stdin.on("data", (c) => (data += c));
+      process.stdin.on("end", () => resolve(data.trim()));
+      return;
+    }
+    process.stderr.write(question);
+    process.stdin.resume();
+    process.stdin.setRawMode(true);
+    let value = "";
+    const onData = (buf: Buffer) => {
+      for (const ch of buf.toString()) {
+        if (ch === "\n" || ch === "\r" || ch === "\u0004") {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.removeListener("data", onData);
+          process.stderr.write("\n");
+          return resolve(value.trim());
+        }
+        if (ch === "\u0003") process.exit(130); // Ctrl+C
+        else if (ch === "\u007f" || ch === "\b") value = value.slice(0, -1);
+        else value += ch;
+      }
+    };
+    process.stdin.on("data", onData);
+  });
+}
+
 config
-  .command("set-key <api-key>")
-  .description("Store the API key in ~/.config/gmi/.env (chmod 600)")
-  .action(async (apiKey: string) => {
+  .command("set-key [api-key]")
+  .description("Store the API key in ~/.config/gmi/.env (chmod 600). Omit the argument to be prompted — keeps the key out of shell history.")
+  .action(async (apiKey: string | undefined) => {
     try {
+      if (!apiKey) apiKey = await promptHidden("Paste your GMI API key (input hidden): ");
+      if (!apiKey) fail(new GmiError("No key provided."));
       const dir = join(homedir(), ".config", "gmi");
       const path = join(dir, ".env");
       await mkdir(dir, { recursive: true });

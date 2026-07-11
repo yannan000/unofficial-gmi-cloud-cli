@@ -20,6 +20,14 @@ const EXT_BY_TYPE: Record<string, string> = {
   "audio/x-wav": ".wav",
 };
 
+/**
+ * Filenames are derived from server-controlled URLs — sanitize so a hostile
+ * path segment ("..", separators, control chars) can never escape `dir`.
+ */
+function safeName(name: string): string {
+  return name.replace(/[^\w.\- ]/g, "_").replace(/^[.\s]+/, "").slice(0, 200);
+}
+
 /** Download each URL into `dir`; returns the saved file paths. */
 export async function downloadAssets(urls: string[], dir: string, prefix: string): Promise<string[]> {
   await mkdir(dir, { recursive: true });
@@ -31,7 +39,7 @@ export async function downloadAssets(urls: string[], dir: string, prefix: string
       throw new GmiError(`Download failed (${res.status} ${res.statusText}): ${url}`, res.status);
     }
     const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim();
-    let name = basename(new URL(url).pathname);
+    let name = safeName(basename(new URL(url).pathname));
     if (!name || !extname(name)) {
       const ext = EXT_BY_TYPE[contentType] ?? "";
       name = `${prefix}${urls.length > 1 ? `-${i + 1}` : ""}${ext}`;

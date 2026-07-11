@@ -35,6 +35,29 @@ test("downloadAssets names files from the URL path, falling back to content type
   }
 });
 
+test("hostile URL path segments cannot escape the output directory", async () => {
+  const srv = createServer((_req, res) => {
+    res.setHeader("content-type", "image/png");
+    res.end(Buffer.from("89504e470d0a1a0a", "hex"));
+  });
+  await new Promise<void>((r) => srv.listen(0, r));
+  const port = (srv.address() as { port: number }).port;
+  const dir = await mkdtemp(join(tmpdir(), "gmi-dl-test-"));
+  try {
+    const saved = await downloadAssets(
+      [`http://127.0.0.1:${port}/x/..`, `http://127.0.0.1:${port}/.hidden%20..name.png`],
+      dir,
+      "safe",
+    );
+    for (const p of saved) {
+      assert.ok(p.startsWith(dir), `escaped output dir: ${p}`);
+      assert.ok(!basename(p).startsWith("."), `hidden/dot file: ${p}`);
+    }
+  } finally {
+    srv.close();
+  }
+});
+
 test("downloadAssets surfaces HTTP failures", async () => {
   const srv = createServer((_req, res) => {
     res.statusCode = 403;

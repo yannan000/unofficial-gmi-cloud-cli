@@ -6,3 +6,4 @@ test-output/
 # personal media — never publish
 worldcup/*
 !worldcup/SCRIPT.md
+.DS_Store
