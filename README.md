@@ -118,7 +118,7 @@ gmi mcp-config cursor --install   # write it into the client's config (backs up 
 
 | Client | Setup |
 |--------|-------|
-| Claude Code | `gmi mcp-config claude-code` → prints the `claude mcp add` one-liner |
+| Claude Code / Cowork | `gmi mcp-config claude-code` → prints the `claude mcp add` one-liner (Cowork shares it; Cowork agents can also drive the `gmi` CLI directly in their terminal) |
 | Claude Desktop | `gmi mcp-config claude-desktop --install` |
 | Cursor | `gmi mcp-config cursor --install` |
 | Windsurf (Cognition) | `gmi mcp-config windsurf --install` |

@@ -37,10 +37,11 @@ const isMac = process.platform === "darwin";
 export const CLIENTS: ClientSpec[] = [
   {
     id: "claude-code",
-    name: "Claude Code",
+    name: "Claude Code / Claude Cowork",
     installable: false,
-    snippet: (p) => `claude mcp add ${SERVER_NAME} -- node "${p}"`,
-    notes: "Run this in your terminal. Add -s user to register it for every project.",
+    snippet: (p) => `claude mcp add ${SERVER_NAME} -s user -- node "${p}"`,
+    notes:
+      "Run this in your terminal; -s user registers it for every project. Cowork sessions share this registration (and can also just run the gmi CLI directly in their terminal).",
   },
   {
     id: "claude-desktop",
