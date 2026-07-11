@@ -106,7 +106,7 @@ The result: the people with the most creative demand — solo creators, small st
 |-----------|--------|
 | "Why not just use the console?" | Use both. The console is great for exploring one model. `gmi` is for the day you have 12 shots and a deadline. |
 | "Is this affiliated with GMI?" | No — unofficial, MIT-licensed, bring your own key. If GMI ships an official CLI, ours has still moved the ecosystem forward. |
-| "Another wrapper that'll rot?" | 30-test suite pinning every real API behavior, CI on every push across two OSes and two Node versions, npm provenance on releases. It's maintained like infrastructure, not a gist. |
+| "Another wrapper that'll rot?" | 39-test suite pinning every real API behavior, CI on every push across two OSes and two Node versions, npm provenance on releases. It's maintained like infrastructure, not a gist. |
 | "Can it handle real people / my face?" | Yes — with the right model. The docs tell you which providers accept human likenesses (Kling) and which never will (Seedance), so you don't burn an evening finding out. |
 
 ---

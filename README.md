@@ -69,7 +69,7 @@ No API key in your IDE configs: the server auto-loads `GMI_API_KEY` from `~/.con
 | You are… | Your pain | What you get |
 |----------|-----------|--------------|
 | **A creator** shipping daily (shorts, ASMR, UGC ads, faceless channels) | Console throughput; format walls; surprise spend | Storyboard in stills, render in batches, download to `./clips` — one command per shot |
-| **A builder** adding gen-media to a product or pipeline | Weeks of API wrapper work; retry/idempotency landmines | The client you were about to write, already battle-tested — 37 tests pin the real API's behavior |
+| **A builder** adding gen-media to a product or pipeline | Weeks of API wrapper work; retry/idempotency landmines | The client you were about to write, already battle-tested — 39 tests pin the real API's behavior |
 | **An agent user** (Claude, Cursor, Codex, droid…) | Wants the AI to *do* the work end to end | One MCP server = your assistant sees all 300+ models and runs your whole render pipeline |
 
 ## There's no extra cost
@@ -112,8 +112,9 @@ npm install && npm run build
 Put your key (from **console.gmicloud.ai → API Keys**) in any of (shell env always wins):
 
 ```bash
-gmi config set-key YOUR_KEY       # writes ~/.config/gmi/.env, chmod 600
-# or: ./.env, or <package>/.env
+gmi config set-key                # prompts with hidden input (keeps the key out of shell history)
+gmi config set-key YOUR_KEY       # or pass it directly; writes ~/.config/gmi/.env, chmod 600
+# or put GMI_API_KEY in ./.env, or <package>/.env
 ```
 
 Run `npm link` once to get `gmi` on your PATH (or use `node dist/cli.js ...`).
@@ -174,7 +175,11 @@ On `success`, the job's `outcome` contains the generated asset URLs; the client 
 
 ### Testing
 
-35 tests pin every real API behavior — response shapes, the upload contract, retry policy, cost math, config merging. `npm test`. CI runs on every push (ubuntu + macos × Node 22/24).
+39 tests pin every real API behavior — response shapes, the upload contract, retry policy, cost math, config merging, and download path-traversal defense. `npm test`. CI runs on every push (ubuntu + macos × Node 22/24).
+
+### Security
+
+See [SECURITY.md](SECURITY.md) for the security model (key handling, public upload URLs, the MCP/agent surface, network footprint) and how to report a vulnerability. In short: your key is stored `0600` and sent only to GMI; uploads produce public URLs; downloads are written only inside your chosen output directory; no telemetry beyond a once-daily npm version check.
 
 ### Docs
 
@@ -194,7 +199,7 @@ Use both. The console is great for exploring one model. `gmi` is for the day you
 No — unofficial, MIT-licensed, bring your own key. It adds no markup and calls the same APIs your console session does.
 
 **Another wrapper that'll rot in six months?**
-37 tests pin every real API behavior, CI runs on every push across two OSes and two Node versions, and `gmi update` keeps installs current. It's maintained like infrastructure, not a gist.
+39 tests pin every real API behavior, CI runs on every push across two OSes and two Node versions, and `gmi update` keeps installs current. It's maintained like infrastructure, not a gist.
 
 **Can it handle real people / my face?**
 Yes — with the right model. Kling accepts human likenesses; Seedance never will (its filter rejects any photorealistic person, even AI-rendered ones). The model matrix above saves you from finding that out with your own money.
