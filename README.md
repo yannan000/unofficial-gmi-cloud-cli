@@ -1,11 +1,49 @@
 # Unofficial GMI Cloud CLI
 
-> ⚠️ Unofficial community tool for **GMI Studio**. Not affiliated with or endorsed by GMI Cloud.
+[![CI](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg)](LICENSE)
+
+> **Your terminal is now a film studio.**
+> One command to any of GMI Studio's 300+ models — image, video, audio, and LLMs — with uploads, format conversion, polling, downloads, and cost checks handled for you.
+
+> ⚠️ Unofficial community tool for **GMI Studio**. Not affiliated with or endorsed by GMI Cloud. MIT-licensed, bring your own API key — this tool adds $0 markup.
+
+## Why
+
+GMI Studio hosts the best generative models in one place — Kling, Veo, Sora, Seedance, Gemini Image, and 300+ more. But using them at production pace means fighting four kinds of friction:
+
+- **Console click-work** — every generation is a browser session. Fine for one image, brutal for a 12-shot storyboard.
+- **Raw API plumbing** — an async job queue with quirks (presigned uploads that sign a literal `image/jpg` content type, jobs to poll, media URLs buried in nested JSON). Every developer rebuilds the same wrapper.
+- **Format walls** — the upload API accepts six file types; creators live in HEIC, WebP, MOV, and FLAC.
+- **Blind spend** — malformed payloads and over-spec jobs cost money to discover.
+
+`gmi` solves all four:
+
+| | |
+|---|---|
+| ⚡ **One command per shot** | `gmi generate -m kling-v3-image-to-video --image ./keyframe.heic -p "..." -o ./clips` — upload, conversion, submission, polling, and download in one line |
+| 📁 **Any file in** | HEIC off your iPhone, WebP, TIFF, MOV, FLAC — auto-converted before upload |
+| 💰 **Never pay to be wrong** | Payloads validated against the model's schema and **priced before submission**; failed submissions cost $0; `--dry-run` previews everything |
+| 🔁 **Async, tamed** | Live progress with elapsed time, `Ctrl+C` prints the resume command, retries that never double-submit a paid job |
+| 🤖 **Agent-native** | The same package is an MCP server — Claude Code (or any MCP client) can drive your whole render pipeline |
+| 🧠 **Production knowledge included** | Which providers accept human likenesses (Kling ✓, Seedance ✗ — even AI-rendered ones) — learned in real production so you don't burn an evening finding out |
+
+**Proof:** a three-scene short film — a real person's likeness scoring in a World Cup final alongside a Messi-style #10, plus a pirate-harbor epilogue — was produced entirely through this CLI in one evening for ~**$12** in model spend, including all failed takes ($0 each, thanks to pre-flight).
+
+## What it covers
 
 CLI **and** MCP server for [GMI Cloud](https://console.gmicloud.ai) — one shared client covering:
 
 - **Studio / generative media** — image, video, and audio models (Seedream, Veo, Kling, Sora, Flux, MiniMax TTS, …) via the async request queue at `console.gmicloud.ai/api/v1/ie/requestqueue/apikey`
 - **Inference Engine LLMs** — OpenAI-compatible chat API at `api.gmi-serving.com/v1` (DeepSeek, Qwen, Llama, …)
+
+**Who it's for:**
+
+- **Creators** shipping daily — storyboard in stills, render in batches, download to `./clips`
+- **Builders** adding gen-media to a product — the API client you were about to write, already battle-tested (30-test suite, CI on every push)
+- **Agent users** — add one MCP server and your assistant sees all 305 models
+
+*Not a GUI, not a marketplace, not official. If the console serves you well, keep it — `gmi` is for the day you outgrow it.*
 
 ## Setup
 
@@ -101,6 +139,17 @@ Or in any MCP client config:
 | `upload_file` | Upload a local file → public URL for payloads |
 | `list_llm_models` | List OpenAI-compatible LLM models |
 | `chat` | Chat completion against a GMI-hosted LLM |
+
+## Choosing a video model (learned in production)
+
+| Model | Human likenesses | Frame pinning | Audio | Price (720p-ish) |
+|-------|-----------------|---------------|-------|------------------|
+| **Kling V3 pro** | ✅ accepts real faces | `image` + `image_tail` | ✅ | $0.168–0.252/s |
+| **Seedance 2.0** | ❌ rejects ANY photorealistic person — real photo *or* AI-rendered | `first_frame` + `last_frame` | ✅ | $0.152/s |
+| **Veo 3.1** | ⚠️ strict person filters | first+last frame | ✅ native | $0.40/s |
+| **Sora 2 Pro** | ⚠️ strictest of all | — | ✅ | $0.50/s |
+
+**The recipe that works for character video:** generate an identity still with `gemini-3-pro-image` (reference your photo), build scene keyframes from it (start + end per shot), then animate with Kling V3 pinning both ends. The video model only interpolates motion between compositions that are already right.
 
 ## Job lifecycle
 
