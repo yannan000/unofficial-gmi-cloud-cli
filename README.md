@@ -14,39 +14,46 @@ npm install
 npm run build
 ```
 
-Create an API key at **console.gmicloud.ai → API Keys** (shown only once), then:
+Create an API key at **console.gmicloud.ai → API Keys** (shown only once), then put it in any of (checked in order; shell env always wins):
+
+- `./.env` in your working directory
+- `.env` in this package's root
+- `~/.config/gmi/.env`
 
 ```bash
-export GMI_API_KEY=your-key
-# optional, only for multi-org accounts:
-export GMI_ORG_ID=your-org-id
+# e.g.
+mkdir -p ~/.config/gmi && echo 'GMI_API_KEY=your-key' > ~/.config/gmi/.env
+# optional, only for multi-org accounts: GMI_ORG_ID=your-org-id
 ```
 
 ## CLI
 
 ```bash
-node dist/cli.js models                 # list Studio media models
-node dist/cli.js models --llm           # list LLM models
-node dist/cli.js model seedream-5.0-lite  # show a model's parameter schema
+gmi models                        # Studio media models, as a table
+gmi models --type video           # filter by type/name
+gmi models --llm                  # LLM models
+gmi models --json                 # raw JSON (for scripting)
+gmi model seedream-5.0-lite       # parameter schema + pricing, readable
 
-# generate an image (waits for completion, prints media URLs)
-node dist/cli.js generate -m seedream-5.0-lite -p "Oakland skyline at dusk, cinematic"
+# generate an image and save it locally (spinner shows live status + elapsed time)
+gmi generate -m seedream-5.0-lite -p "Oakland skyline at dusk, cinematic" -o ./out
 
 # generate a video with full payload control
-node dist/cli.js generate -m Veo3 --payload '{"prompt":"eagle over mountains","durationSeconds":"8","aspectRatio":"16:9"}'
+gmi generate -m Veo3 --payload '{"prompt":"eagle over mountains","durationSeconds":"8","aspectRatio":"16:9"}' -o ./out
 
-# fire-and-forget, then poll later
-node dist/cli.js generate -m Veo3 -p "..." --no-wait
-node dist/cli.js status <request-id> --wait
+# fire-and-forget, then poll / fetch later (Ctrl+C during a wait prints the resume command)
+gmi generate -m Veo3 -p "..." --no-wait
+gmi status <request-id> --wait -o ./out
+gmi download <request-id> -o ./out
 
 # upload a reference image (for image-to-video models), get a public URL
-node dist/cli.js upload ./photo.jpg
+gmi upload ./photo.jpg
 
 # chat with an LLM
-node dist/cli.js chat -m deepseek-ai/DeepSeek-V3 "Summarize BSIS armed guard requirements"
+gmi chat -m deepseek-ai/DeepSeek-V3 "Summarize BSIS armed guard requirements"
 ```
 
-Install globally with `npm link` to use `gmi` directly.
+Run `npm link` once to get the `gmi` command on your PATH (or use `node dist/cli.js ...`).
 
 ## MCP server
 

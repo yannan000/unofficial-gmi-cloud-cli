@@ -1,20 +1,32 @@
 #!/usr/bin/env node
 /**
- * gmi — CLI for GMI Cloud Studio (image/video/audio) + Inference Engine (LLMs).
+ * gmi — Unofficial GMI Cloud CLI for GMI Studio (image/video/audio) + LLMs.
  *
- * Auth: export GMI_API_KEY=...   (console.gmicloud.ai → API Keys)
+ * Auth: GMI_API_KEY from the shell, ./.env, <package>/.env, or ~/.config/gmi/.env
+ * (create a key at console.gmicloud.ai → API Keys).
  */
 import { Command } from "commander";
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
-import { GmiClient, GmiError, extractMediaUrls, TERMINAL_STATUSES } from "./client.js";
+import {
+  GmiClient,
+  GmiError,
+  GenerationRequest,
+  extractMediaUrls,
+  TERMINAL_STATUSES,
+} from "./client.js";
+import { loadEnv } from "./config.js";
+import { downloadAssets } from "./download.js";
+import { renderModelsTable, renderModelDetail, startSpinner, Spinner } from "./ui.js";
+
+loadEnv();
 
 const program = new Command();
 
 program
   .name("gmi")
-  .description("GMI Cloud Studio + Inference Engine CLI")
-  .version("0.1.0");
+  .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
+  .version("0.2.0");
 
 function client(): GmiClient {
   try {
@@ -34,17 +46,71 @@ function fail(e: unknown): never {
   process.exit(1);
 }
 
-function print(data: unknown): void {
-  console.log(typeof data === "string" ? data : JSON.stringify(data, null, 2));
+function printJson(data: unknown): void {
+  console.log(JSON.stringify(data, null, 2));
+}
+
+/** Poll a job with a spinner; Ctrl+C prints how to resume instead of losing the job. */
+async function waitWithSpinner(
+  c: GmiClient,
+  requestId: string,
+  timeoutSeconds: number,
+): Promise<GenerationRequest> {
+  const spin: Spinner = startSpinner(`${requestId} — waiting`);
+  const onInt = () => {
+    spin.stop();
+    console.error(`\nInterrupted — the job is still running on GMI Cloud.`);
+    console.error(`Resume with: gmi status ${requestId} --wait`);
+    process.exit(130);
+  };
+  process.on("SIGINT", onInt);
+  try {
+    return await c.waitForGeneration(requestId, {
+      timeoutMs: timeoutSeconds * 1000,
+      onPoll: (r) => {
+        if (!TERMINAL_STATUSES.includes(r.status)) spin.update(`${requestId} — ${r.status}`);
+      },
+    });
+  } finally {
+    process.removeListener("SIGINT", onInt);
+    spin.stop();
+  }
+}
+
+/** Shared tail for generate/status/download: print results, optionally save assets. */
+async function finishJob(r: GenerationRequest, outputDir?: string): Promise<void> {
+  if (r.status !== "success") {
+    fail(new GmiError(`Generation ${r.status}${r.reason ? `: ${r.reason}` : ""}`));
+  }
+  const urls = extractMediaUrls(r.outcome);
+  if (outputDir) {
+    const spin = startSpinner(`downloading ${urls.length} asset(s)`);
+    try {
+      const saved = await downloadAssets(urls, outputDir, r.request_id.slice(0, 8));
+      spin.stop(`Saved ${saved.length} file(s)`);
+      saved.forEach((p) => console.log(p));
+      return;
+    } catch (e) {
+      spin.stop();
+      fail(e);
+    }
+  }
+  printJson({ request_id: r.request_id, status: r.status, media_urls: urls, outcome: r.outcome });
 }
 
 program
   .command("models")
   .description("List Studio generative-media models (use --llm for LLM models)")
   .option("--llm", "List LLM models instead of Studio media models")
+  .option("--type <filter>", "Filter by type or name substring, e.g. image, video, audio")
+  .option("--json", "Print raw JSON")
   .action(async (opts) => {
     try {
-      print(opts.llm ? await client().listLlmModels() : await client().listStudioModels());
+      const resp = opts.llm ? await client().listLlmModels() : await client().listStudioModels();
+      if (opts.json) return printJson(resp);
+      const table = renderModelsTable(resp, opts.type);
+      if (table) console.log(table);
+      else printJson(resp); // unrecognized shape — show everything
     } catch (e) {
       fail(e);
     }
@@ -53,9 +119,14 @@ program
 program
   .command("model <model-id>")
   .description("Show a Studio model's parameter schema and pricing")
-  .action(async (modelId: string) => {
+  .option("--json", "Print raw JSON")
+  .action(async (modelId: string, opts) => {
     try {
-      print(await client().getStudioModel(modelId));
+      const resp = await client().getStudioModel(modelId);
+      if (opts.json) return printJson(resp);
+      const detail = renderModelDetail(resp);
+      if (detail) console.log(detail);
+      else printJson(resp);
     } catch (e) {
       fail(e);
     }
@@ -67,6 +138,7 @@ program
   .requiredOption("-m, --model <id>", "Studio model ID, e.g. seedream-5.0-lite")
   .option("-p, --prompt <text>", "Prompt (shortcut for --payload '{\"prompt\": ...}')")
   .option("--payload <json>", "Full JSON payload of model parameters")
+  .option("-o, --output <dir>", "Download generated assets into this directory")
   .option("--no-wait", "Return the request_id immediately instead of waiting")
   .option("--timeout <seconds>", "Max seconds to wait for completion", "600")
   .action(async (opts) => {
@@ -80,26 +152,9 @@ program
       const c = client();
       const created = await c.createGeneration(opts.model, payload);
       console.error(`Request ${created.request_id} submitted (status: ${created.status})`);
-      if (!opts.wait) {
-        print(created);
-        return;
-      }
-      let lastStatus = "";
-      const done = await c.waitForGeneration(created.request_id, {
-        timeoutMs: Number(opts.timeout) * 1000,
-        onPoll: (r) => {
-          if (r.status !== lastStatus) {
-            lastStatus = r.status;
-            if (!TERMINAL_STATUSES.includes(r.status)) console.error(`  ...${r.status}`);
-          }
-        },
-      });
-      if (done.status !== "success") {
-        fail(new GmiError(`Generation ${done.status}${done.reason ? `: ${done.reason}` : ""}`));
-      }
-      const urls = extractMediaUrls(done.outcome);
-      console.error(`Done. ${urls.length} media URL(s):`);
-      print({ request_id: done.request_id, status: done.status, media_urls: urls, outcome: done.outcome });
+      if (!opts.wait) return printJson(created);
+      const done = await waitWithSpinner(c, created.request_id, Number(opts.timeout));
+      await finishJob(done, opts.output);
     } catch (e) {
       fail(e);
     }
@@ -109,14 +164,31 @@ program
   .command("status <request-id>")
   .description("Check a generation job's status (add --wait to poll until done)")
   .option("--wait", "Poll until the job reaches a terminal status")
+  .option("-o, --output <dir>", "Download generated assets into this directory when done")
   .option("--timeout <seconds>", "Max seconds to wait", "600")
   .action(async (requestId: string, opts) => {
     try {
       const c = client();
-      const r = opts.wait
-        ? await c.waitForGeneration(requestId, { timeoutMs: Number(opts.timeout) * 1000 })
-        : await c.getGeneration(requestId);
-      print({ ...r, media_urls: extractMediaUrls(r.outcome) });
+      if (opts.wait) {
+        const done = await waitWithSpinner(c, requestId, Number(opts.timeout));
+        return finishJob(done, opts.output);
+      }
+      const r = await c.getGeneration(requestId);
+      if (opts.output && r.status === "success") return finishJob(r, opts.output);
+      printJson({ ...r, media_urls: extractMediaUrls(r.outcome) });
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+program
+  .command("download <request-id>")
+  .description("Download a completed job's assets")
+  .option("-o, --output <dir>", "Directory to save into", ".")
+  .action(async (requestId: string, opts) => {
+    try {
+      const r = await client().getGeneration(requestId);
+      await finishJob(r, opts.output);
     } catch (e) {
       fail(e);
     }

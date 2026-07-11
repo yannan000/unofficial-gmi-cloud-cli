@@ -11,8 +11,11 @@ import { z } from "zod";
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { GmiClient, GmiError, extractMediaUrls } from "./client.js";
+import { loadEnv } from "./config.js";
 
-const server = new McpServer({ name: "gmi-studio", version: "0.1.0" });
+loadEnv();
+
+const server = new McpServer({ name: "gmi-studio", version: "0.2.0" });
 
 let _client: GmiClient | undefined;
 function client(): GmiClient {
