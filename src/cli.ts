@@ -10,7 +10,9 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { readFile, writeFile, mkdir, chmod } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, extname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { CLIENTS, findClient, mergeMcpConfig, SERVER_NAME } from "./integrations.js";
 import {
   GmiClient,
   GmiError,
@@ -66,7 +68,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.6.0");
+  .version("0.7.0");
 
 function client(): GmiClient {
   try {
@@ -304,6 +306,52 @@ program
     } catch (e) {
       fail(e);
     }
+  });
+
+program
+  .command("mcp")
+  .description("Start the MCP server (stdio) — use this as the command in any MCP client config")
+  .action(async () => {
+    await import("./mcp-server.js"); // module starts the stdio server on import
+  });
+
+program
+  .command("mcp-config [client]")
+  .description(`Print (or --install) the MCP config for an AI IDE: ${CLIENTS.map((c) => c.id).join(", ")}`)
+  .option("--install", "Write the config into the client's config file (JSON clients only)")
+  .action(async (clientId: string | undefined, opts) => {
+    const serverPath = join(dirname(fileURLToPath(import.meta.url)), "mcp-server.js");
+    if (!clientId) {
+      console.log(renderTable(
+        ["CLIENT", "ID", "CONFIG FILE"],
+        CLIENTS.map((c) => [c.name, c.id, c.configPath ?? "—"]),
+        70,
+      ));
+      console.log("\nUsage: gmi mcp-config <id>          # print the snippet");
+      console.log("       gmi mcp-config <id> --install  # write it into the config file");
+      return;
+    }
+    const spec = findClient(clientId);
+    if (!spec) fail(new GmiError(`Unknown client "${clientId}". Options: ${CLIENTS.map((c) => c.id).join(", ")}`));
+    if (opts.install) {
+      if (!spec.installable || !spec.configPath) {
+        fail(new GmiError(`${spec.name} can't be auto-installed. Apply this manually:\n\n${spec.snippet(serverPath)}`));
+      }
+      let existing: string | undefined;
+      try {
+        existing = readFileSync(spec.configPath, "utf8");
+      } catch {}
+      const merged = mergeMcpConfig(existing, serverPath);
+      if (existing !== undefined) await writeFile(`${spec.configPath}.bak`, existing);
+      await mkdir(dirname(spec.configPath), { recursive: true });
+      await writeFile(spec.configPath, merged + "\n");
+      console.log(`✓ Added "${SERVER_NAME}" to ${spec.configPath}${existing !== undefined ? ` (backup: .bak)` : ""}`);
+      console.log(`Restart ${spec.name} to load it.`);
+      return;
+    }
+    console.log(`# ${spec.name}${spec.configPath ? ` — ${spec.configPath}` : ""}`);
+    if (spec.notes) console.log(`# ${spec.notes}`);
+    console.log(spec.snippet(serverPath));
   });
 
 program

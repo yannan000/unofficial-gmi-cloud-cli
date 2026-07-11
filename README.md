@@ -106,27 +106,31 @@ Requests retry automatically on 429 rate limits (and on 5xx/network errors for r
 
 Run `npm link` once to get the `gmi` command on your PATH (or use `node dist/cli.js ...`).
 
-## MCP server
+## MCP server — works with every AI IDE
 
-Register with Claude Code:
+The MCP server speaks standard stdio, so it works in **Claude Code, Claude Desktop, Cursor, Windsurf (Cognition), Cline, Kilo Code, OpenAI Codex, Grok CLI**, and any other MCP client. One command sets each of them up:
 
 ```bash
-claude mcp add gmi-studio -e GMI_API_KEY=your-key -- node "/Users/y/Documents/claude projects/GMI MCP or CLI/dist/mcp-server.js"
+gmi mcp-config                    # list every supported client + its config file
+gmi mcp-config cursor             # print the exact snippet for one client
+gmi mcp-config cursor --install   # write it into the client's config (backs up the old one)
 ```
 
-Or in any MCP client config:
+| Client | Setup |
+|--------|-------|
+| Claude Code | `gmi mcp-config claude-code` → prints the `claude mcp add` one-liner |
+| Claude Desktop | `gmi mcp-config claude-desktop --install` |
+| Cursor | `gmi mcp-config cursor --install` |
+| Windsurf (Cognition) | `gmi mcp-config windsurf --install` |
+| Cline (VS Code) | `gmi mcp-config cline --install` (or paste via Cline's MCP UI) |
+| Kilo Code (VS Code) | `gmi mcp-config kilo --install` |
+| OpenAI Codex CLI | `gmi mcp-config codex` → TOML for `~/.codex/config.toml` |
+| Grok CLI | `gmi mcp-config grok --install` |
+| Anything else | `gmi mcp-config generic` — standard `mcpServers` JSON |
 
-```json
-{
-  "mcpServers": {
-    "gmi-studio": {
-      "command": "node",
-      "args": ["/Users/y/Documents/claude projects/GMI MCP or CLI/dist/mcp-server.js"],
-      "env": { "GMI_API_KEY": "your-key" }
-    }
-  }
-}
-```
+No API key in your IDE configs: the server auto-loads `GMI_API_KEY` from `~/.config/gmi/.env`, so the config is just `command: node, args: [.../mcp-server.js]`. (You can still set an `env` block per client if you prefer.)
+
+`gmi mcp` starts the same server — handy as the command in custom configs, and after npm install it's `npx -y unofficial-gmi-cloud-cli mcp`.
 
 ### Tools
 

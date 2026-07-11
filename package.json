@@ -1,6 +1,6 @@
 {
   "name": "unofficial-gmi-cloud-cli",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Unofficial GMI Cloud CLI (+ MCP server) for GMI Studio \u2014 image/video/audio generation and LLM inference",
   "repository": {
     "type": "git",
@@ -27,7 +27,8 @@
   "type": "module",
   "bin": {
     "gmi": "dist/cli.js",
-    "gmi-studio-mcp": "dist/mcp-server.js"
+    "gmi-studio-mcp": "dist/mcp-server.js",
+    "unofficial-gmi-cloud-cli": "dist/cli.js"
   },
   "main": "dist/client.js",
   "scripts": {
