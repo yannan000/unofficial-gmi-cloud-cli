@@ -2,5 +2,7 @@ node_modules/
 dist/
 .env
 test-output/
-worldcup/me.jpg
-worldcup/clips/
+
+# personal media — never publish
+worldcup/*
+!worldcup/SCRIPT.md

@@ -1,11 +1,29 @@
 {
   "name": "unofficial-gmi-cloud-cli",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Unofficial GMI Cloud CLI (+ MCP server) for GMI Studio \u2014 image/video/audio generation and LLM inference",
   "repository": {
     "type": "git",
     "url": "https://github.com/yannan000/unofficial-gmi-cloud-cli.git"
   },
+  "license": "MIT",
+  "keywords": [
+    "gmi-cloud",
+    "gmi-studio",
+    "mcp",
+    "mcp-server",
+    "cli",
+    "video-generation",
+    "image-generation",
+    "kling",
+    "seedance",
+    "llm"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "bin": {
     "gmi": "dist/cli.js",
@@ -14,6 +32,7 @@
   "main": "dist/client.js",
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "dev:mcp": "tsx src/mcp-server.ts",
     "dev:cli": "tsx src/cli.ts"
   },

@@ -45,11 +45,14 @@ gmi generate -m Veo3 --payload '{"prompt":"eagle over mountains","durationSecond
 gmi generate -m kling-v3-image-to-video --image ./photo.jpg -p "gentle camera push-in" -o ./out
 gmi generate -m seedance-2-0-260128 --image ./face1.jpg ./face2.jpg --image-key reference_images -p "..." -o ./out
 
+# pre-flight: validate the payload against the model schema + estimate cost, no submit
+gmi generate -m Veo3 -p "..." --dry-run
+
 # fire-and-forget, then poll / fetch later (Ctrl+C during a wait prints the resume command)
-gmi generate -m Veo3 -p "..." --no-wait
+gmi generate -m Veo3 -p "..." --no-wait -q        # -q prints only the request_id
 gmi status <request-id> --wait -o ./out
-gmi download <request-id> -o ./out
-gmi requests                      # your recent jobs (optionally: gmi requests <model-id>)
+gmi download <request-id> -o ./out -q             # -q prints only saved paths
+gmi requests --status failed --limit 10           # filterable job history
 
 # upload a file yourself, get a public URL (jpg, jpeg, png, mp4, mp3, wav)
 gmi upload ./photo.jpg

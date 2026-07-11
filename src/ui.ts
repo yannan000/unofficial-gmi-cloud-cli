@@ -162,6 +162,59 @@ export function renderModelDetail(resp: unknown): string | undefined {
   return out.length > 0 ? out.join("\n") : undefined;
 }
 
+// ---------- payload validation & cost estimation ----------
+
+export interface PayloadCheck {
+  missing: string[];
+  unknown: string[];
+}
+
+/** Compare a payload against a model detail's parameters array (best-effort). */
+export function validatePayload(detail: unknown, payload: Record<string, unknown>): PayloadCheck | undefined {
+  if (!detail || typeof detail !== "object") return undefined;
+  const params = (detail as Record<string, unknown>).parameters;
+  if (!Array.isArray(params)) return undefined;
+  const known = new Map<string, boolean>();
+  for (const p of params) {
+    if (p && typeof p === "object" && typeof (p as Record<string, unknown>).name === "string") {
+      known.set((p as Record<string, unknown>).name as string, (p as Record<string, unknown>).required === true);
+    }
+  }
+  if (known.size === 0) return undefined;
+  const missing = [...known.entries()].filter(([k, req]) => req && payload[k] === undefined).map(([k]) => k);
+  const unknown = Object.keys(payload).filter((k) => !known.has(k));
+  return { missing, unknown };
+}
+
+/**
+ * Best-effort cost estimate from a model detail's price_info
+ * ({pricing_type, price (micro-dollars), unit}) and the payload.
+ */
+export function estimateCost(detail: unknown, payload: Record<string, unknown>): string | undefined {
+  if (!detail || typeof detail !== "object") return undefined;
+  const m = detail as Record<string, unknown>;
+  const pi = m.price_info as Record<string, unknown> | undefined;
+  const price = Number(pi?.price);
+  if (!pi || !Number.isFinite(price) || price <= 0) {
+    const text = m.pricing_details;
+    return typeof text === "string" && text ? `pricing: ${text}` : undefined;
+  }
+  const perUnit = price / 1e6;
+  const unit = String(pi.unit ?? pi.pricing_type ?? "unit");
+  if (/second/i.test(unit)) {
+    const secs = Number(payload.duration ?? payload.durationSeconds ?? payload.video_length);
+    if (Number.isFinite(secs) && secs > 0) {
+      return `~$${(perUnit * secs).toFixed(2)} (${secs}s × $${perUnit.toFixed(3)}/s)`;
+    }
+    return `$${perUnit.toFixed(3)} per second`;
+  }
+  if (/image/i.test(unit)) {
+    const n = Number(payload.max_images ?? payload.n ?? 1) || 1;
+    return `~$${(perUnit * n).toFixed(3)} (${n} × $${perUnit.toFixed(3)}/image)`;
+  }
+  return `$${perUnit.toFixed(4)} per ${unit}`;
+}
+
 // ---------- spinner ----------
 
 const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];

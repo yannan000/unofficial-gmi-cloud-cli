@@ -18,7 +18,15 @@ import {
 } from "./client.js";
 import { loadEnv } from "./config.js";
 import { downloadAssets } from "./download.js";
-import { renderModelsTable, renderModelDetail, renderTable, startSpinner, Spinner } from "./ui.js";
+import {
+  renderModelsTable,
+  renderModelDetail,
+  renderTable,
+  startSpinner,
+  Spinner,
+  validatePayload,
+  estimateCost,
+} from "./ui.js";
 import { prepareForUpload } from "./convert.js";
 
 /**
@@ -55,7 +63,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.4.0");
+  .version("0.5.0");
 
 function client(): GmiClient {
   try {
@@ -107,7 +115,7 @@ async function waitWithSpinner(
 }
 
 /** Shared tail for generate/status/download: print results, optionally save assets. */
-async function finishJob(r: GenerationRequest, outputDir?: string): Promise<void> {
+async function finishJob(r: GenerationRequest, outputDir?: string, quiet = false): Promise<void> {
   if (r.status !== "success") {
     fail(new GmiError(`Generation ${r.status}${r.reason ? `: ${r.reason}` : ""}`));
   }
@@ -116,7 +124,7 @@ async function finishJob(r: GenerationRequest, outputDir?: string): Promise<void
     const spin = startSpinner(`downloading ${urls.length} asset(s)`);
     try {
       const saved = await downloadAssets(urls, outputDir, r.request_id.slice(0, 8));
-      spin.stop(`Saved ${saved.length} file(s)`);
+      spin.stop(quiet ? undefined : `Saved ${saved.length} file(s)`);
       saved.forEach((p) => console.log(p));
       return;
     } catch (e) {
@@ -124,6 +132,7 @@ async function finishJob(r: GenerationRequest, outputDir?: string): Promise<void
       fail(e);
     }
   }
+  if (quiet) return urls.forEach((u) => console.log(u));
   printJson({ request_id: r.request_id, status: r.status, media_urls: urls, outcome: r.outcome });
 }
 
@@ -175,6 +184,8 @@ program
   .option("-o, --output <dir>", "Download generated assets into this directory")
   .option("--no-wait", "Return the request_id immediately instead of waiting")
   .option("--timeout <seconds>", "Max seconds to wait for completion", "600")
+  .option("--dry-run", "Validate the payload and show the cost estimate without submitting")
+  .option("-q, --quiet", "Print only the request_id (--no-wait) or media URLs / saved paths")
   .action(async (opts) => {
     try {
       let payload: Record<string, unknown> = {};
@@ -189,11 +200,38 @@ program
       if (Object.keys(payload).length === 0) {
         fail(new GmiError("Provide -p/--prompt, --payload, or --image. See `gmi model <id>` for parameters."));
       }
+
+      // Pre-flight: validate against the model schema and estimate cost.
+      // Warnings only — the API stays the source of truth.
+      let detail: unknown;
+      try {
+        detail = await c.getStudioModel(opts.model);
+      } catch {
+        // model detail unavailable — skip pre-flight
+      }
+      if (detail) {
+        const check = validatePayload(detail, payload);
+        if (check?.missing.length) {
+          fail(new GmiError(`Missing required parameter(s) for ${opts.model}: ${check.missing.join(", ")}`));
+        }
+        if (check?.unknown.length && !opts.quiet) {
+          console.error(`Warning: parameter(s) not in ${opts.model}'s schema: ${check.unknown.join(", ")}`);
+        }
+        const cost = estimateCost(detail, payload);
+        if (cost && !opts.quiet) console.error(`Estimated cost: ${cost}`);
+      }
+      if (opts.dryRun) {
+        if (!opts.quiet) console.error("Dry run — not submitting. Payload:");
+        printJson({ model: opts.model, payload });
+        return;
+      }
+
       const created = await c.createGeneration(opts.model, payload);
+      if (opts.quiet && !opts.wait) return console.log(created.request_id);
       console.error(`Request ${created.request_id} submitted (status: ${created.status})`);
       if (!opts.wait) return printJson(created);
       const done = await waitWithSpinner(c, created.request_id, Number(opts.timeout));
-      await finishJob(done, opts.output);
+      await finishJob(done, opts.output, opts.quiet);
     } catch (e) {
       fail(e);
     }
@@ -205,15 +243,17 @@ program
   .option("--wait", "Poll until the job reaches a terminal status")
   .option("-o, --output <dir>", "Download generated assets into this directory when done")
   .option("--timeout <seconds>", "Max seconds to wait", "600")
+  .option("-q, --quiet", "Print only media URLs / saved paths")
   .action(async (requestId: string, opts) => {
     try {
       const c = client();
       if (opts.wait) {
         const done = await waitWithSpinner(c, requestId, Number(opts.timeout));
-        return finishJob(done, opts.output);
+        return finishJob(done, opts.output, opts.quiet);
       }
       const r = await c.getGeneration(requestId);
-      if (opts.output && r.status === "success") return finishJob(r, opts.output);
+      if (opts.output && r.status === "success") return finishJob(r, opts.output, opts.quiet);
+      if (opts.quiet) return console.log(r.status);
       printJson({ ...r, media_urls: extractMediaUrls(r.outcome) });
     } catch (e) {
       fail(e);
@@ -224,10 +264,11 @@ program
   .command("download <request-id>")
   .description("Download a completed job's assets")
   .option("-o, --output <dir>", "Directory to save into", ".")
+  .option("-q, --quiet", "Print only saved file paths")
   .action(async (requestId: string, opts) => {
     try {
       const r = await client().getGeneration(requestId);
-      await finishJob(r, opts.output);
+      await finishJob(r, opts.output, opts.quiet);
     } catch (e) {
       fail(e);
     }
@@ -236,12 +277,17 @@ program
 program
   .command("requests [model]")
   .description("List your recent generation jobs, optionally filtered by model")
+  .option("--status <status>", "Filter by status: success, failed, processing, queued, cancelled")
+  .option("--limit <n>", "Show at most n rows")
   .option("--json", "Print raw JSON")
   .action(async (model: string | undefined, opts) => {
     try {
       const resp = await client().listGenerations(model);
-      if (opts.json) return printJson(resp);
-      const rows = (resp.requests ?? []).map((r) => {
+      let requests = resp.requests ?? [];
+      if (opts.status) requests = requests.filter((r) => r.status === opts.status);
+      if (opts.limit) requests = requests.slice(0, Number(opts.limit));
+      if (opts.json) return printJson(requests);
+      const rows = requests.map((r) => {
         const ts = r.created_at ? new Date(r.created_at > 1e12 ? r.created_at : r.created_at * 1000) : undefined;
         return [
           r.request_id,
