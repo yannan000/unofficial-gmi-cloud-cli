@@ -1,6 +1,8 @@
 # Unofficial GMI Cloud CLI
 
 [![CI](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/unofficial-gmi-cloud-cli.svg)](https://www.npmjs.com/package/unofficial-gmi-cloud-cli)
+[![npm downloads](https://img.shields.io/npm/dm/unofficial-gmi-cloud-cli.svg)](https://www.npmjs.com/package/unofficial-gmi-cloud-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg)](LICENSE)
 
 > **Your terminal is now a film studio.**

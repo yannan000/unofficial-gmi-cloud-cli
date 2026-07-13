@@ -124,6 +124,20 @@ The result: the people with the most creative demand — solo creators, small st
 
 Counter-metric to watch: support burden. If issue volume outpaces stars, the quickstart is failing — fix docs before features.
 
+### Where to read each number (no telemetry — all free, aggregate sources)
+
+The CLI collects **nothing** about users (see SECURITY.md). Adoption is tracked entirely through public, aggregate signals:
+
+| Metric | Source | Notes |
+|--------|--------|-------|
+| Installs (daily/weekly/total) | [npmjs.com/package/unofficial-gmi-cloud-cli](https://www.npmjs.com/package/unofficial-gmi-cloud-cli) → "Weekly Downloads"; deeper history at [npm-stat.com](https://npm-stat.com/charts.html?package=unofficial-gmi-cloud-cli) | The headline adoption number; includes `npx` runs. Badge on the README. |
+| Version split | `npm-stat` per-version, or `npm view unofficial-gmi-cloud-cli` | Shows how fast users move to new releases (proxy for `gmi update` uptake). |
+| Stars / forks | GitHub repo header | Interest + credibility. |
+| Unique visitors / clones / referrers | GitHub repo → **Insights → Traffic** (last 14 days; only repo admins see it) | Where launch traffic actually comes from — tells you which channel worked. |
+| Qualitative pull | GitHub issues, X/Reddit mentions, "this saved me" posts | The signal that beats any number for an early launch. |
+
+What these **can't** tell you: who a user is, whether they stay active after install, or which commands they run. That's by design — richer per-user data would require opt-in telemetry (off by default, disclosed), which is a deliberate post-launch decision, not a default.
+
 ---
 
 ## 9. The Story, In One Paragraph
