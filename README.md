@@ -105,6 +105,8 @@ It covers both GMI surfaces with one shared client:
 - **Studio / generative media** — image, video, audio via the async request queue at `console.gmicloud.ai/api/v1/ie/requestqueue/apikey`
 - **Inference Engine LLMs** — OpenAI-compatible chat at `api.gmi-serving.com/v1` (DeepSeek, Qwen, Llama, …)
 
+> **Scope (this release):** `gmi` drives the **GMI Studio generation** side only — running models to produce images, video, and audio, plus LLM inference. Published GMI Studio **Workflows** are runnable too, since they appear in the model catalog (`gmi generate -m <workflow-id> …`). **Creating or editing** workflows — including natural-language workflow authoring — is done in the GMI Studio visual editor and is **not** part of this CLI (GMI exposes no authoring API). If that changes, support can follow.
+
 ### Setup
 
 ```bash
