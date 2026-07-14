@@ -166,7 +166,7 @@ gmi requests --status failed --limit 10           # filterable job history
 gmi upload ./photo.heic
 
 # chat with an LLM (streams by default; --no-stream for scripting)
-gmi chat -m deepseek-ai/DeepSeek-V3 "Summarize BSIS armed guard requirements"
+gmi chat -m deepseek-ai/DeepSeek-V3 "Write 5 punchy captions for a sunset lighthouse reel"
 
 gmi doctor                        # key, connectivity, converters — health check
 gmi update                        # update in place (git checkout → pull+build; npm → @latest)
