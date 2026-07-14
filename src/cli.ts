@@ -69,7 +69,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("1.0.0");
+  .version("1.1.0");
 
 // Once-a-day update notice on stderr — never for the MCP server (clean stdio)
 // and never for `update` itself.
@@ -319,9 +319,25 @@ program
 
 program
   .command("mcp")
-  .description("Start the MCP server (stdio) — use this as the command in any MCP client config")
-  .action(async () => {
-    await import("./mcp-server.js"); // module starts the stdio server on import
+  .description("Start the MCP server. Default stdio (local IDEs); --http for remote (ChatGPT / claude.ai)")
+  .option("--http", "Serve over HTTP/SSE for remote connectors (requires GMI_MCP_TOKEN)")
+  .option("--port <n>", "HTTP port", "8787")
+  .option("--host <addr>", "HTTP bind address", "127.0.0.1")
+  .action(async (opts) => {
+    if (opts.http) {
+      const token = process.env.GMI_MCP_TOKEN;
+      if (!token || token.length < 16) {
+        fail(new GmiError(
+          "HTTP mode needs a strong bearer token. Set GMI_MCP_TOKEN (16+ chars) — it gates a network endpoint wired to your GMI key.\n" +
+            "e.g.  GMI_MCP_TOKEN=$(openssl rand -hex 24) gmi mcp --http",
+        ));
+      }
+      const { runHttp } = await import("./http-server.js");
+      await runHttp({ port: Number(opts.port), host: opts.host, token });
+    } else {
+      const { runStdio } = await import("./mcp-server.js");
+      await runStdio();
+    }
   });
 
 program

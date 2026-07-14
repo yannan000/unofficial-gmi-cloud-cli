@@ -64,7 +64,22 @@ gmi mcp-config cursor --install   # write the config in (backs up the old one)
 
 No API key in your IDE configs: the server auto-loads `GMI_API_KEY` from `~/.config/gmi/.env`. `gmi mcp` starts the same server — handy in custom configs, and after npm install it's `npx -y unofficial-gmi-cloud-cli mcp`.
 
-*(ChatGPT's normal chat can't run local tools — but Codex cloud can: it has a terminal, so it installs and drives the CLI like any other agent.)*
+### ChatGPT & claude.ai (remote connectors)
+
+Browser chats (ChatGPT, claude.ai) can't run a local program — they only connect to **remote** MCP servers over HTTPS. `gmi mcp --http` serves exactly that:
+
+```bash
+# a strong token is REQUIRED — it guards an endpoint wired to your GMI key
+GMI_MCP_TOKEN=$(openssl rand -hex 24) gmi mcp --http --port 8787
+```
+
+This exposes two endpoints: `/mcp` (Streamable HTTP — Claude Code `--transport http`, modern clients) and `/sse` (for ChatGPT connectors). Put it behind a tunnel you control (e.g. `cloudflared tunnel --url http://localhost:8787`), then add the public URL as a connector:
+
+- **ChatGPT** — Settings → Connectors → add your `https://…/sse` URL, auth header `Authorization: Bearer <your token>`
+- **claude.ai** — [claude.ai/customize/connectors](https://claude.ai/customize/connectors) → add `https://…/mcp` with the same bearer header
+- **Claude Code (remote)** — `claude mcp add --transport http gmi-studio https://…/mcp --header "Authorization: Bearer <token>"`
+
+> ⚠️ **Security:** the HTTP endpoint spends your GMI credits for anyone who has the URL + token. It requires a 16+ char `GMI_MCP_TOKEN` and refuses to start without one. Bind to localhost + a private tunnel; never expose it unauthenticated. Chat apps have no local filesystem, so `generate` returns media **URLs** rather than downloading files — the local CLI is still the best experience for saving assets.
 
 ## Who it's for
 

@@ -1,6 +1,6 @@
 {
   "name": "unofficial-gmi-cloud-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Unofficial GMI Cloud CLI (+ MCP server) for GMI Studio \u2014 image/video/audio generation and LLM inference",
   "repository": {
     "type": "git",
