@@ -69,7 +69,7 @@ const program = new Command();
 program
   .name("gmi")
   .description("Unofficial GMI Cloud CLI — Studio media generation + LLM inference")
-  .version("0.8.0");
+  .version("1.0.0");
 
 // Once-a-day update notice on stderr — never for the MCP server (clean stdio)
 // and never for `update` itself.
