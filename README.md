@@ -18,7 +18,7 @@ If you use an AI assistant — Claude, Cursor, Codex, Windsurf, Cline, Kilo, dro
 
 > **Set up the GMI CLI by following the "For AI agents" steps at https://github.com/yannan000/unofficial-gmi-cloud-cli, then run `gmi doctor` to confirm everything works.**
 
-The only thing your assistant will ask you for is a GMI API key (create one at [console.gmicloud.ai](https://console.gmicloud.ai) → API Keys — it's shown once, so copy it when it appears).
+The only thing your assistant will ask you for is a GMI API key. [**Sign up for GMI Cloud here**](https://console.gmicloud.ai/ref/ZB44WJST) *(referral link)*, then create a key under → API Keys — it's shown once, so copy it when it appears.
 
 ### Then just say what you want
 
@@ -128,7 +128,7 @@ It covers both GMI surfaces with one shared client:
 npm install && npm run build
 ```
 
-Put your key (from **console.gmicloud.ai → API Keys**) in any of (shell env always wins):
+Put your key (from **console.gmicloud.ai → API Keys** — [sign up here](https://console.gmicloud.ai/ref/ZB44WJST) if you don't have an account) in any of (shell env always wins):
 
 ```bash
 gmi config set-key                # prompts with hidden input (keeps the key out of shell history)
@@ -241,7 +241,7 @@ The tool is free. Generations bill to your GMI key at GMI's prices — a test im
    git clone https://github.com/yannan000/unofficial-gmi-cloud-cli.git
    cd unofficial-gmi-cloud-cli && npm install && npm run build && npm link
    ```
-2. Ask the user for their GMI API key (they create it at **console.gmicloud.ai → API Keys**; it is shown only once). Store it with:
+2. Ask the user for their GMI API key (they create it at **console.gmicloud.ai → API Keys**; it is shown only once — new users can [sign up here](https://console.gmicloud.ai/ref/ZB44WJST)). Store it with:
    ```bash
    gmi config set-key THEIR_KEY
    ```
