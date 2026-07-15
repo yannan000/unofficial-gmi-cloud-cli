@@ -7,3 +7,6 @@ test-output/
 worldcup/*
 !worldcup/SCRIPT.md
 .DS_Store
+launch-gif/*.mp4
+banner/*.png
+banner/google_ai_studio_*
