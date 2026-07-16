@@ -1,6 +1,11 @@
 # GMI Cloud CLI
 
-<a href="https://console.gmicloud.ai/ref/ZB44WJST"><img src="banner/gmi-logo.svg" alt="GMI Cloud" height="36"></a>
+<a href="https://console.gmicloud.ai/ref/ZB44WJST">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="banner/gmi-logo-white.svg">
+    <img src="banner/gmi-logo-black.svg" alt="GMI Cloud" height="44">
+  </picture>
+</a>
 
 **Powered by [GMI Cloud](https://gmicloud.ai)** — *if it can be imagined, run it.*
 
