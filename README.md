@@ -1,4 +1,6 @@
-# Unofficial GMI Cloud CLI
+# GMI Cloud CLI
+
+![GMI Cloud CLI — your AI is now a film studio](banner/social-preview.jpg)
 
 [![CI](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/unofficial-gmi-cloud-cli.svg)](https://www.npmjs.com/package/unofficial-gmi-cloud-cli)
@@ -8,7 +10,9 @@
 > **Your terminal is now a film studio.**
 > One command to any of GMI Studio's 300+ models — image, video, audio, and LLMs — with uploads, format conversion, polling, downloads, and cost checks handled for you.
 
-> ⚠️ Unofficial community tool for **GMI Studio**. Not affiliated with or endorsed by GMI Cloud. MIT-licensed, bring your own API key — this tool adds $0 markup.
+> 🟡 Built for **GMI Studio** by a [**GMI Cloud ambassador**](https://console.gmicloud.ai/ref/ZB44WJST) — an independent, open-source tool (not an official GMI product). MIT-licensed, bring your own API key, $0 markup.
+>
+> *Powered by [GMI Cloud](https://gmicloud.ai) — if it can be imagined, run it.*
 
 ---
 
@@ -215,7 +219,7 @@ See [SECURITY.md](SECURITY.md) for the security model (key handling, public uplo
 Use both. The console is great for exploring one model. `gmi` is for the day you have 12 shots and a deadline — or an AI assistant you'd rather hand the work to.
 
 **Is this affiliated with GMI Cloud?**
-No — unofficial, MIT-licensed, bring your own key. It adds no markup and calls the same APIs your console session does.
+It's built by a GMI Cloud ambassador — an independent, open-source tool, not an official GMI product. MIT-licensed, bring your own key, no markup; it calls the same APIs your console session does.
 
 **Another wrapper that'll rot in six months?**
 39 tests pin every real API behavior, CI runs on every push across two OSes and two Node versions, and `gmi update` keeps installs current. It's maintained like infrastructure, not a gist.
