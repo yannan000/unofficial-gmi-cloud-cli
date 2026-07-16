@@ -1,6 +1,8 @@
 # GMI Cloud CLI
 
-![GMI Cloud CLI — your AI is now a film studio](banner/social-preview.jpg)
+<a href="https://console.gmicloud.ai/ref/ZB44WJST"><img src="banner/gmi-logo.svg" alt="GMI Cloud" height="36"></a>
+
+**Powered by [GMI Cloud](https://gmicloud.ai)** — *if it can be imagined, run it.*
 
 [![CI](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yannan000/unofficial-gmi-cloud-cli/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/unofficial-gmi-cloud-cli.svg)](https://www.npmjs.com/package/unofficial-gmi-cloud-cli)
@@ -11,8 +13,8 @@
 > One command to any of GMI Studio's 300+ models — image, video, audio, and LLMs — with uploads, format conversion, polling, downloads, and cost checks handled for you.
 
 > 🟡 Built for **GMI Studio** by a [**GMI Cloud ambassador**](https://console.gmicloud.ai/ref/ZB44WJST) — an independent, open-source tool (not an official GMI product). MIT-licensed, bring your own API key, $0 markup.
->
-> *Powered by [GMI Cloud](https://gmicloud.ai) — if it can be imagined, run it.*
+
+![GMI Cloud CLI — your AI is now a film studio](banner/social-preview.jpg)
 
 ---
 
