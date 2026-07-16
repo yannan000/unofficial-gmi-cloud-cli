@@ -40,13 +40,13 @@ Keep honest everywhere: the CLI **runs** GMI Studio generation (image/video/audi
 > `npm install -g unofficial-gmi-cloud-cli`
 > https://github.com/yannan000/unofficial-gmi-cloud-cli
 >
-> Unofficial — built by a creator tired of the console. And yes, I made Haaland do the Jack Sparrow dock walk. Because I could. 🏴‍☠️
+> Built by a GMI Cloud ambassador (an independent tool, not an official GMI product). And yes, I made Haaland do the Jack Sparrow dock walk. Because I could. 🏴‍☠️
 
 ---
 
 ## 2. Announcement (LinkedIn / blog / launch post)
 
-**Title:** Your terminal is now a film studio — introducing the Unofficial GMI Cloud CLI
+**Title:** Your terminal is now a film studio — introducing the GMI Cloud CLI
 
 > GMI Studio put 300+ generative models in one place — Kling, Veo, Sora, Gemini Image, MiniMax, and more. It's a fantastic place to make a single image. But the moment you try to make something *real* — a multi-scene video, a batch of ads, a week of shorts — the web console turns into dozens of uploads, tabs, and manual downloads.
 >
@@ -64,7 +64,7 @@ Keep honest everywhere: the CLI **runs** GMI Studio generation (image/video/audi
 >
 > As a stress test, I produced a three-scene short film — a real person scoring a World Cup goal with a Messi assist, plus a pirate-harbor scene — end to end through the CLI in one evening for about **$12**, failed takes included.
 >
-> It's **unofficial** — not affiliated with GMI Cloud, MIT-licensed, bring your own key, zero markup. This release drives GMI Studio's **generation** side (running models and published workflows) plus LLM inference; creating workflows still lives in the Studio visual editor.
+> Built by a **GMI Cloud ambassador** — an independent, open-source tool (not an official GMI product). MIT-licensed, bring your own key, zero markup. This release drives GMI Studio's **generation** side (running models and published workflows) plus LLM inference; creating workflows still lives in the Studio visual editor.
 >
 > `npm install -g unofficial-gmi-cloud-cli`
 > https://github.com/yannan000/unofficial-gmi-cloud-cli
@@ -86,7 +86,7 @@ Keep honest everywhere: the CLI **runs** GMI Studio generation (image/video/audi
 > - **Provider likeness filters differ a lot.** Kling accepts photorealistic faces; Seedance (BytePlus) rejects ANY photorealistic person — even AI-rendered ones. The README says which model to use so you don't waste credits.
 > - **It's an MCP server two ways.** Local stdio for Claude Code / Cursor / Codex / etc. (`gmi mcp-config <client> --install`), and an authenticated HTTP/SSE mode (`gmi mcp --http`) so ChatGPT and claude.ai remote connectors can drive it too. The HTTP endpoint refuses to start without a bearer token, since it spends real credits.
 >
-> Retries never double-submit a paid job (429 retries everywhere, 5xx only for reads). 43 tests, CI on ubuntu+macos × Node 22/24. Unofficial, MIT, bring your own key. Scope note: it runs generation (models + published Studio workflows) and LLM inference; it doesn't author workflows — that's the Studio UI.
+> Retries never double-submit a paid job (429 retries everywhere, 5xx only for reads). 43 tests, CI on ubuntu+macos × Node 22/24. Built by a GMI Cloud ambassador (independent, not an official GMI product), MIT, bring your own key. Scope note: it runs generation (models + published Studio workflows) and LLM inference; it doesn't author workflows — that's the Studio UI.
 >
 > As a stress test I made a 3-scene short film (a real person scoring a World Cup goal, a pirate-harbor scene) end to end through the CLI in one evening for ~$12 including failed takes. Recipe's in the README: identity still (Gemini) → scene keyframes → Kling with start/end frames pinned → ffmpeg.
 >
@@ -116,6 +116,6 @@ Keep honest everywhere: the CLI **runs** GMI Studio generation (image/video/audi
 > `npm install -g unofficial-gmi-cloud-cli`
 > https://github.com/yannan000/unofficial-gmi-cloud-cli
 >
-> ⚠️ It's **unofficial** — not affiliated with the GMI team, just a community tool. Bring your own key, zero markup. Feedback very welcome, and mods please pull this if it's the wrong channel 🙏
+> ⚠️ Built by a **GMI Cloud ambassador** — an independent community tool, not an official GMI product. Bring your own key, zero markup. Feedback very welcome, and mods please pull this if it's the wrong channel 🙏
 >
 > (I also used it to make myself score a World Cup goal with a Messi assist for ~$12 — pipeline's in the README if you want to make your own.)

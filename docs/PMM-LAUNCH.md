@@ -1,4 +1,4 @@
-# Launch Plan — `gmi`: The Unofficial GMI Cloud CLI
+# Launch Plan — `gmi`: The GMI Cloud CLI
 
 **Version:** v1.0 launch · **Owner:** Yoofi Annan · **Status:** Draft for launch week
 
@@ -96,7 +96,7 @@ The result: the people with the most creative demand — solo creators, small st
 - [ ] `NPM_TOKEN` secret added; v1.0.0 GitHub Release → auto-publish to npm
 - [ ] README: 30-second quickstart GIF at the top
 - [ ] Demo video exported in 16:9 + 9:16
-- [ ] Disclaimer verified prominent ("unofficial, not affiliated with GMI Cloud")
+- [ ] Ambassador framing verified prominent ("built by a GMI Cloud ambassador — independent, not an official GMI product")
 
 ---
 
@@ -105,7 +105,7 @@ The result: the people with the most creative demand — solo creators, small st
 | Objection | Answer |
 |-----------|--------|
 | "Why not just use the console?" | Use both. The console is great for exploring one model. `gmi` is for the day you have 12 shots and a deadline. |
-| "Is this affiliated with GMI?" | No — unofficial, MIT-licensed, bring your own key. If GMI ships an official CLI, ours has still moved the ecosystem forward. |
+| "Is this affiliated with GMI?" | It's built by a GMI Cloud ambassador — an independent, MIT-licensed tool, not an official GMI product. Bring your own key. If GMI ships an official CLI, ours has still moved the ecosystem forward. |
 | "Another wrapper that'll rot?" | 39-test suite pinning every real API behavior, CI on every push across two OSes and two Node versions, npm provenance on releases. It's maintained like infrastructure, not a gist. |
 | "Can it handle real people / my face?" | Yes — with the right model. The docs tell you which providers accept human likenesses (Kling) and which never will (Seedance), so you don't burn an evening finding out. |
 
