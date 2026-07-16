@@ -10,3 +10,5 @@ worldcup/*
 launch-gif/*.mp4
 banner/*.png
 banner/google_ai_studio_*
+!banner/gmi-logo-black.png
+!banner/gmi-logo-white.png

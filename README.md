@@ -2,8 +2,8 @@
 
 <a href="https://console.gmicloud.ai/ref/ZB44WJST">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="banner/gmi-logo-white.svg">
-    <img src="banner/gmi-logo-black.svg" alt="GMI Cloud" height="44">
+    <source media="(prefers-color-scheme: dark)" srcset="banner/gmi-logo-white.png">
+    <img src="banner/gmi-logo-black.png" alt="GMI Cloud" height="40">
   </picture>
 </a>
 
